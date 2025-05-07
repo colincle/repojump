@@ -25,7 +25,7 @@ if [[ -f "$HOME/.bashrc" ]]; then
 		echo "$alias_line" >> "$HOME/.bashrc"
 		echo "$completion_line" >> "$HOME/.bashrc"
 	fi
-	echo "✅ Updated ~/.bashrc with PATH, alias, and completion."
+	echo "Updated ~/.bashrc with PATH, alias, and completion."
 fi
 
 # Update ~/.zshrc if exists
@@ -37,11 +37,10 @@ if [[ -f "$HOME/.zshrc" ]]; then
 		echo "$alias_line" >> "$HOME/.zshrc"
 		echo "$completion_line" >> "$HOME/.zshrc"
 	fi
-	echo "✅ Updated ~/.zshrc with PATH, alias, and completion."
+	echo "Updated ~/.zshrc with PATH, alias, and completion."
 fi
 
 echo ""
 echo "✅ repojump installed to: $HOME/.local/bin/repojump"
-echo "✅ repojump autocompletion installed to: $HOME/.local/bin/repojump_completion"
-echo "⚠ Please run: source ~/.bashrc   and/or   source ~/.zshrc"
-echo "   (depending on your shell) to apply the changes."
+echo ""
+echo "⚠️ Please run: source ~/.bashrc   and/or   source ~/.zshrc (depending on your shell) to apply the changes."
