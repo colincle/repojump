@@ -111,7 +111,7 @@ function add {
 
 	if [[ -f "$config_file" ]]; then
 		source "$config_file"
-		api_url="https://api.github.com/user/repos?per_page=100"
+		api_url="https://api.github.com/users/$username/repos?per_page=100"
 		auth_header="-H Authorization: token $GITHUB_TOKEN"
 	else
 		api_url="https://api.github.com/users/$username/repos?per_page=100"
