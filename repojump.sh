@@ -4,7 +4,7 @@ function add {
 	if [[ -z "$2" ]]; then
 		echo "Error: Missing GitHub username."
 		echo "Usage: repojump add username"
-		exit 1
+		return 1
 	fi
 
 	if ! cd ~/repojump; then
@@ -52,7 +52,7 @@ function set-token {
 		echo "2. Click 'Generate new token (classic)'"
 		echo "3. Select scope: repo"
 		echo "4. Generate and copy the token"
-		exit 1
+		return 1
 	fi
 
 	config_dir="$HOME/repojump/configs"
@@ -94,6 +94,6 @@ else
 
 	if [[ $found -eq 0 ]]; then
 		echo "Error: Repo '$1' not found in any list."
-		exit 1
+		return 1
 	fi
 fi
