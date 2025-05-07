@@ -1,5 +1,89 @@
 #!/usr/bin/env bash
 
+function jump-to-repo {
+	repo_name="$1"
+	username=""
+	duplicates=()
+
+	for listfile in ~/repojump/*/.*.list; do
+		if grep -q "$repo_name\.git" "$listfile"; then
+			match_user=$(basename "$(dirname "$listfile")")
+			duplicates+=("$match_user")
+		fi
+	done
+
+	if [[ ${#duplicates[@]} -gt 1 ]]; then
+		handle-duplicate-repo "$@"
+		return
+	fi
+
+	for listfile in ~/repojump/*/.*.list; do
+		if grep -q "$repo_name\.git" "$listfile"; then
+			username=$(basename "$(dirname "$listfile")")
+			break
+		fi
+	done
+
+	if [[ -z "$username" ]]; then
+		echo "❌ Error: Repo '$repo_name' not found in any list."
+		return 1
+	fi
+
+	repo_dir="$HOME/repojump/$username/$repo_name"
+	if [[ ! -d "$repo_dir" ]]; then
+		echo "Cloning $repo_name from $username..."
+		git clone "https://github.com/$username/$repo_name.git" "$repo_dir" || {
+			echo "❌ Git clone failed."
+			return 1
+		}
+	fi
+
+	if cd "$repo_dir"; then
+		echo "✅ Entered directory: $repo_dir"
+	else
+		echo "❌ Failed to enter directory: $repo_dir"
+		return 1
+	fi
+}
+
+function handle-duplicate-repo {
+	repo_name="$1"
+	requested_user="$2"
+
+	if [[ -z "$requested_user" ]]; then
+		echo "⚠ Multiple users have a repo named '$repo_name'."
+		echo "👉 Please run: repojump $repo_name <username>"
+		return 1
+	fi
+
+	listfile="$HOME/repojump/$requested_user/.${requested_user}.list"
+	if [[ ! -f "$listfile" ]]; then
+		echo "❌ Error: No list found for user '$requested_user'."
+		return 1
+	fi
+
+	if ! grep -q "$repo_name\.git" "$listfile"; then
+		echo "❌ Error: Repo '$repo_name' not found under user '$requested_user'."
+		return 1
+	fi
+
+	repo_dir="$HOME/repojump/$requested_user/$repo_name"
+	if [[ ! -d "$repo_dir" ]]; then
+		echo "Cloning $repo_name from $requested_user..."
+		git clone "https://github.com/$requested_user/$repo_name.git" "$repo_dir" || {
+			echo "❌ Git clone failed."
+			return 1
+		}
+	fi
+
+	if cd "$repo_dir"; then
+		echo "✅ Entered directory: $repo_dir"
+	else
+		echo "❌ Failed to enter directory: $repo_dir"
+		return 1
+	fi
+}
+
 function add {
 	if [[ -z "$2" ]]; then
 		echo "Error: Missing GitHub username."
@@ -7,7 +91,7 @@ function add {
 		return 1
 	fi
 
-	if ! cd ~/repojump; then
+	if ! cd ~/repojump 2>/dev/null; then
 		mkdir ~/repojump
 		cd ~/repojump
 	fi
@@ -21,19 +105,46 @@ function add {
 	mkdir -p "$username"
 	cd "$username"
 	listfile=".$username.list"
+	echo -n "" > "$listfile"
 
 	config_file="$HOME/repojump/configs/$username.config"
 
 	if [[ -f "$config_file" ]]; then
 		source "$config_file"
-		curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/user/repos | \
-		grep '"clone_url"' | \
-		cut -d '"' -f 4 > "$listfile"
+		api_url="https://api.github.com/user/repos?per_page=100"
+		auth_header="-H Authorization: token $GITHUB_TOKEN"
+	else
+		api_url="https://api.github.com/users/$username/repos?per_page=100"
+		auth_header=""
+	fi
+
+	while [[ -n "$api_url" ]]; do
+		echo "🔍 Fetching: $api_url"
+
+		# Get headers + body
+		response=$(curl -sD - $auth_header "$api_url")
+		body=$(echo "$response" | sed -n '/^\r$/,$p' | sed '1d')
+		link_header=$(echo "$response" | grep -i '^Link:')
+
+		if [[ -z "$body" ]]; then
+			echo "❌ Error: Empty response body."
+			break
+		fi
+
+		echo "$body" | grep '"clone_url"' | cut -d '"' -f 4 >> "$listfile"
+
+		next_link=$(echo "$link_header" | grep -o '<[^>]*>; rel="next"' | sed -E 's/<([^>]+)>.*/\1/')
+
+		if [[ -n "$next_link" ]]; then
+			api_url="$next_link"
+		else
+			api_url=""
+		fi
+	done
+
+	if [[ -f "$config_file" ]]; then
 		echo "✅ Repo list for '$username' created (including private repos)."
 	else
-		curl -s https://api.github.com/users/$username/repos | \
-		grep '"clone_url"' | \
-		cut -d '"' -f 4 > "$listfile"
 		echo "✅ Repo list for '$username' created (public repos only)."
 		echo "👉 To include private repos, run:"
 		echo "   repojump set-token $username <your_token>"
@@ -66,7 +177,49 @@ function set-token {
 }
 
 function help {
-	echo "help text"
+	echo "📦 repojump — Manage and jump into GitHub repos easily"
+	echo ""
+	echo "Usage:"
+	echo "  repojump add <GitHub-username>"
+	echo "      → Fetch and store all repositories URLs for the given GitHub username."
+	echo ""
+	echo "  repojump set-token <username> <token>"
+	echo "      → Store a GitHub personal access token (PAT) for a user to access private repos."
+	echo ""
+	echo "  repojump <reponame>"
+	echo "      → Jump into the local folder of the given repo, cloning it if missing."
+	echo ""
+	echo "  repojump <reponame> <username>"
+	echo "      → Jump into a specific user's repo when multiple users have repos with the same name."
+	echo ""
+	echo "Notes:"
+	echo "  - Public repositories work without tokens."
+	echo "  - Private repositories require running 'set-token' first."
+	echo "  - All local clones are stored under: ~/repojump/<username>/<reponame>"
+	echo "Uninstall:"
+	echo "  To fully remove repojump and its data:"
+	echo "    1. Delete the files: ~/.local/bin/repojump and ~/.local/bin/repojump_completion"
+	echo "    2. Remove or comment the repojump setup lines from your ~/.bashrc or ~/.zshrc"
+	echo "    3. (Warning) Delete all stored data and local clones with: rm -rf ~/repojump"
+	echo "       → Caution: This will permanently erase any local changes or unpushed work."
+	echo ""
+	echo "  - This tool is open source, review the repository for implementation details."
+}
+
+function update {
+	echo "🔄 Updating all stored GitHub usernames..."
+	start_dir=$(pwd)
+
+	for user_dir in ~/repojump/*; do
+		if [[ -d "$user_dir" ]]; then
+			username=$(basename "$user_dir")
+			echo "👉 Updating $username..."
+			add "add" "$username"
+		fi
+	done
+
+	cd "$start_dir"
+	echo "✅ All repo lists updated. Returned to: $start_dir"
 }
 
 if [[ "$1" == "help" ]]; then
@@ -75,25 +228,8 @@ elif [[ "$1" == "add" ]]; then
 	add "$@"
 elif [[ "$1" == "set-token" ]]; then
 	set-token "$@"
+elif [[ "$1" == "update" ]]; then
+	update
 else
-	found=0
-	for listfile in ~/repojump/*/.*.list; do
-		if grep -q "/$1\.git" "$listfile"; then
-			username=$(basename "$(dirname "$listfile")")
-			repo_dir="$HOME/repojump/$username/$1"
-			if [[ ! -d "$repo_dir" ]]; then
-				echo "Cloning $1..."
-				git clone "https://github.com/$username/$1.git" "$repo_dir"
-			fi
-			cd "$repo_dir"
-			echo "✅ Entered directory: $repo_dir"
-			found=1
-			break
-		fi
-	done
-
-	if [[ $found -eq 0 ]]; then
-		echo "Error: Repo '$1' not found in any list."
-		return 1
-	fi
+	jump-to-repo "$@"
 fi
