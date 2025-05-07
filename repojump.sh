@@ -119,7 +119,7 @@ function add {
 	fi
 
 	while [[ -n "$api_url" ]]; do
-		echo "🔍 Fetching: $api_url"
+		echo "   Fetching: $api_url"
 
 		# Get headers + body
 		response=$(curl -sD - $auth_header "$api_url")
@@ -146,9 +146,13 @@ function add {
 		echo "✅ Repo list for '$username' created (including private repos)."
 	else
 		echo "✅ Repo list for '$username' created (public repos only)."
-		echo "   To include private repos, run:"
+		echo "   To include private repos, get a GitHub personal access token (PAT):"
+		echo "    1. Visit https://github.com/settings/tokens"
+		echo "    2. Click 'Generate new token' (classic) and select the 'repo' scope."
+		echo "    3. Copy the token."
+		echo "   Then run:"
 		echo "   	repojump set-token $username <your_token>"
-		echo "   and then run:"
+		echo "   and after that:"
 		echo "   	repojump add $username"
 	fi
 }
@@ -212,11 +216,23 @@ function update {
 	for user_dir in ~/repojump/*; do
 		if [[ -d "$user_dir" ]]; then
 			username=$(basename "$user_dir")
-			add "add" "$username"
+
+			if [[ "$username" == "configs" ]]; then
+				continue
+			fi
+
+			echo "🔄 Updating $username..."
+
+			if [[ "$username" == "$authenticated_username" ]]; then
+				add "add" "$username"
+			else
+				add "add" "$username"
+			fi
 		fi
 	done
 
 	cd "$start_dir"
+	echo "   All repositories updated."
 }
 
 if [[ "$1" == "help" ]]; then
