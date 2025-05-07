@@ -51,8 +51,8 @@ function handle-duplicate-repo {
 	requested_user="$2"
 
 	if [[ -z "$requested_user" ]]; then
-		echo "⚠ Multiple users have a repo named '$repo_name'."
-		echo "👉 Please run: repojump $repo_name <username>"
+		echo "⚠️ Multiple users have a repo named '$repo_name'."
+		echo "   Please run: repojump $repo_name <username>"
 		return 1
 	fi
 
@@ -146,10 +146,10 @@ function add {
 		echo "✅ Repo list for '$username' created (including private repos)."
 	else
 		echo "✅ Repo list for '$username' created (public repos only)."
-		echo "👉 To include private repos, run:"
-		echo "   repojump set-token $username <your_token>"
+		echo "   To include private repos, run:"
+		echo "   	repojump set-token $username <your_token>"
 		echo "   and then run:"
-		echo "   repojump add $username"
+		echo "   	repojump add $username"
 	fi
 }
 
@@ -207,19 +207,16 @@ function help {
 }
 
 function update {
-	echo "🔄 Updating all stored GitHub usernames..."
 	start_dir=$(pwd)
 
 	for user_dir in ~/repojump/*; do
 		if [[ -d "$user_dir" ]]; then
 			username=$(basename "$user_dir")
-			echo "👉 Updating $username..."
 			add "add" "$username"
 		fi
 	done
 
 	cd "$start_dir"
-	echo "✅ All repo lists updated. Returned to: $start_dir"
 }
 
 if [[ "$1" == "help" ]]; then
