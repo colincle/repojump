@@ -1,20 +1,40 @@
 # ~/.local/bin/repojump_completion
 
-_repojump_completion() {
-	local cur="${COMP_WORDS[1]}"
-	local options="help add set-token"
+if [[ -n $ZSH_VERSION ]]; then
+	# zsh completion
+	_repojump_completion() {
+		local -a options
+		options=("help" "add" "set-token")
 
-	# Collect repo names from saved lists
-	for listfile in "$HOME"/repojump/*/.*.list; do
-		if [[ -f "$listfile" ]]; then
+		for listfile in "$HOME"/repojump/*/.*.list(.N); do
 			while read -r url; do
-				repo=$(basename "${url%.git}")
-				options+=" $repo"
+				repo=${url%.git}
+				repo=${repo##*/}
+				options+="$repo"
 			done < "$listfile"
-		fi
-	done
+		done
 
-	COMPREPLY=( $(compgen -W "$options" -- "$cur") )
-}
+		compadd -- $options
+	}
+	compdef _repojump_completion repojump
 
-complete -F _repojump_completion repojump
+elif [[ -n $BASH_VERSION ]]; then
+	# bash completion
+	_repojump_completion() {
+		local cur="${COMP_WORDS[1]}"
+		local options="help add set-token"
+
+		for listfile in "$HOME"/repojump/*/.*.list; do
+			if [[ -f "$listfile" ]]; then
+				while read -r url; do
+					repo=${url%.git}
+					repo=${repo##*/}
+					options+=" $repo"
+				done < "$listfile"
+			fi
+		done
+
+		COMPREPLY=( $(compgen -W "$options" -- "$cur") )
+	}
+	complete -F _repojump_completion repojump
+fi

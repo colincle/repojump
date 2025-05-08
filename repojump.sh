@@ -85,16 +85,17 @@ function handle-duplicate-repo {
 }
 
 function add {
+	echo "add function starts"
+
 	if [[ -z "$2" ]]; then
 		echo "Error: Missing GitHub username."
 		echo "Usage: repojump add username"
 		return 1
 	fi
 
-	if ! cd ~/repojump 2>/dev/null; then
-		mkdir ~/repojump
-		cd ~/repojump
-	fi
+	mkdir -p ~/repojump
+	cd ~/repojump
+	echo "created folder and cd into it"
 
 	if [[ "$2" == https://github.com/* ]]; then
 		username=$(basename "$2")
@@ -104,30 +105,44 @@ function add {
 
 	mkdir -p "$username"
 	cd "$username"
+	echo "created and cd into username folder"
+
 	listfile=".$username.list"
+	echo "attempting to create listfile: $listfile"
 	echo -n "" > "$listfile"
+	echo "listfile created"
+
 
 	config_file="$HOME/repojump/.configs/$username.config"
+	echo "fetched config file"
 
 	if [[ -f "$config_file" ]]; then
 		source "$config_file"
-		api_url="https://api.github.com/users/$username/repos?per_page=100"
-		auth_header="-H Authorization: token $GITHUB_TOKEN"
+		if [[ "$username" == "$GITHUB_USER" ]]; then
+			echo "matching username for token found, fetching private + public repos"
+			api_url="https://api.github.com/user/repos?per_page=100"
+			use_token=true
+		else
+			echo "no matching username for token, fetching public repos"
+			api_url="https://api.github.com/users/$username/repos?per_page=100"
+			use_token=false
+		fi
 	else
 		api_url="https://api.github.com/users/$username/repos?per_page=100"
-		auth_header=""
+		use_token=false
 	fi
 
 	while [[ -n "$api_url" ]]; do
 		echo "   Fetching: $api_url"
 
-		if [[ -n "$GITHUB_TOKEN" ]]; then
+		if [[ "$use_token" == true ]]; then
 			response=$(curl -sD - -H "Authorization: token $GITHUB_TOKEN" "$api_url")
 		else
 			response=$(curl -sD - "$api_url")
 		fi
-		body=$(echo "$response" | sed -n '/^\r$/,$p' | sed '1d')
-		link_header=$(echo "$response" | grep -i '^Link:')
+
+		headers=$(echo "$response" | sed '/^\r$/q')
+		body=$(echo "$response" | sed '1,/^\r$/d')
 
 		if [[ -z "$body" ]]; then
 			echo "❌ Error: Empty response body."
@@ -136,7 +151,7 @@ function add {
 
 		echo "$body" | grep '"clone_url"' | cut -d '"' -f 4 >> "$listfile"
 
-		next_link=$(echo "$link_header" | grep -o '<[^>]*>; rel="next"' | sed -E 's/<([^>]+)>.*/\1/')
+		next_link=$(echo "$headers" | grep -i '^Link:' | grep -o '<[^>]*>; rel="next"' | sed -E 's/<([^>]+)>.*/\1/')
 
 		if [[ -n "$next_link" ]]; then
 			api_url="$next_link"
@@ -145,20 +160,13 @@ function add {
 		fi
 	done
 
-	if [[ -f "$config_file" ]]; then
-		echo "✅ Repo list for '$username' created (including private repos)."
+	if [[ "$use_token" == true ]]; then
+		echo "✅ Repo list for '$username' created (including private repos if any)."
 	else
 		echo "✅ Repo list for '$username' created (public repos only)."
-		echo "   To include private repos, get a GitHub personal access token (PAT):"
-		echo "    1. Visit https://github.com/settings/tokens"
-		echo "    2. Click 'Generate new token' (classic) and select the 'repo' scope."
-		echo "    3. Copy the token."
-		echo "   Then run:"
-		echo "   	repojump set-token $username <your_token>"
-		echo "   and after that:"
-		echo "   	repojump add $username"
 	fi
 }
+
 
 function set-token {
 	if [[ -z "$2" || -z "$3" ]]; then
