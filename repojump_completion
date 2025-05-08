@@ -6,12 +6,14 @@ if [[ -n $ZSH_VERSION ]]; then
 		local -a options
 		options=("help" "add" "set-token")
 
-		for listfile in "$HOME"/repojump/*/.*.list(.N); do
-			while read -r url; do
-				repo=${url%.git}
-				repo=${repo##*/}
-				options+="$repo"
-			done < "$listfile"
+		for listfile in "$HOME"/repojump/*/.*.list; do
+			if [[ -f "$listfile" ]]; then
+				while read -r url; do
+					repo=${url%.git}
+					repo=${repo##*/}
+					options+="$repo"
+				done < "$listfile"
+			fi
 		done
 
 		compadd -- $options
