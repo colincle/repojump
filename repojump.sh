@@ -85,8 +85,6 @@ function handle-duplicate-repo {
 }
 
 function add {
-	echo "add function starts"
-
 	if [[ -z "$2" ]]; then
 		echo "Error: Missing GitHub username."
 		echo "Usage: repojump add username"
@@ -95,7 +93,6 @@ function add {
 
 	mkdir -p ~/repojump
 	cd ~/repojump
-	echo "created folder and cd into it"
 
 	if [[ "$2" == https://github.com/* ]]; then
 		username=$(basename "$2")
@@ -105,25 +102,19 @@ function add {
 
 	mkdir -p "$username"
 	cd "$username"
-	echo "created and cd into username folder"
 
 	listfile=".$username.list"
-	echo "attempting to create listfile: $listfile"
 	echo -n "" > "$listfile"
-	echo "listfile created"
 
 
 	config_file="$HOME/repojump/.configs/$username.config"
-	echo "fetched config file"
 
 	if [[ -f "$config_file" ]]; then
 		source "$config_file"
 		if [[ "$username" == "$GITHUB_USER" ]]; then
-			echo "matching username for token found, fetching private + public repos"
 			api_url="https://api.github.com/user/repos?per_page=100"
 			use_token=true
 		else
-			echo "no matching username for token, fetching public repos"
 			api_url="https://api.github.com/users/$username/repos?per_page=100"
 			use_token=false
 		fi
