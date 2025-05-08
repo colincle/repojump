@@ -107,7 +107,7 @@ function add {
 	listfile=".$username.list"
 	echo -n "" > "$listfile"
 
-	config_file="$HOME/repojump/configs/$username.config"
+	config_file="$HOME/repojump/.configs/$username.config"
 
 	if [[ -f "$config_file" ]]; then
 		source "$config_file"
@@ -121,8 +121,11 @@ function add {
 	while [[ -n "$api_url" ]]; do
 		echo "   Fetching: $api_url"
 
-		# Get headers + body
-		response=$(curl -sD - $auth_header "$api_url")
+		if [[ -n "$GITHUB_TOKEN" ]]; then
+			response=$(curl -sD - -H "Authorization: token $GITHUB_TOKEN" "$api_url")
+		else
+			response=$(curl -sD - "$api_url")
+		fi
 		body=$(echo "$response" | sed -n '/^\r$/,$p' | sed '1d')
 		link_header=$(echo "$response" | grep -i '^Link:')
 
@@ -170,7 +173,7 @@ function set-token {
 		return 1
 	fi
 
-	config_dir="$HOME/repojump/configs"
+	config_dir="$HOME/repojump/.configs"
 	mkdir -p "$config_dir"
 	config_file="$config_dir/$2.config"
 
@@ -216,11 +219,9 @@ function update {
 	for user_dir in ~/repojump/*; do
 		if [[ -d "$user_dir" ]]; then
 			username=$(basename "$user_dir")
-
-			if [[ "$username" == "configs" ]]; then
+			if [[ "$username" == ".configs" ]]; then
 				continue
 			fi
-
 			echo "🔄 Updating $username..."
 
 			if [[ "$username" == "$authenticated_username" ]]; then
