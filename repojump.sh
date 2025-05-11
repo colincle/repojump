@@ -155,6 +155,7 @@ function add {
 		echo "✅ Repo list for '$username' created (including private repos if any)."
 	else
 		echo "✅ Repo list for '$username' created (public repos only)."
+		echo "   "Use repojump set-token" to access private repos."
 	fi
 }
 
