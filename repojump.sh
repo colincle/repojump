@@ -26,6 +26,7 @@ function jump-to-repo {
 
 	if [[ -z "$username" ]]; then
 		echo "❌ Error: Repo '$repo_name' not found in any list."
+		echo "   Use "repojump update" to update lists or "repojump add" to add a new one."
 		return 1
 	fi
 
