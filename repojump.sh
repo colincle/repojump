@@ -162,9 +162,9 @@ function add {
 
 
 function set-token {
-	if [[ -z "$2" || -z "$3" ]]; then
-		echo "Error: Missing username or token."
-		echo "Usage: repojump set-token username token"
+	if [[ -z "$2" ]]; then
+		echo "Error: Missing username."
+		echo "Usage: repojump set-token <username>"
 		echo ""
 		echo "To generate a GitHub personal access token:"
 		echo "1. Go to https://github.com/settings/tokens"
@@ -174,14 +174,29 @@ function set-token {
 		return 1
 	fi
 
+	# Read the token from a hidden prompt so it never lands in shell
+	# history or the process list.
+	local token
+	printf "GitHub personal access token for %s: " "$2"
+	stty -echo 2>/dev/null
+	read -r token
+	stty echo 2>/dev/null
+	printf "\n"
+
+	if [[ -z "$token" ]]; then
+		echo "Error: No token entered."
+		return 1
+	fi
+
 	config_dir="$HOME/repojump/.configs"
 	mkdir -p "$config_dir"
 	config_file="$config_dir/$2.config"
 
-	echo "GITHUB_USER=$2" > "$config_file"
-	echo "GITHUB_TOKEN=$3" >> "$config_file"
+	# Create the file with owner-only permissions from the start.
+	(umask 077; echo "GITHUB_USER=$2" > "$config_file")
+	echo "GITHUB_TOKEN=$token" >> "$config_file"
 	chmod 600 "$config_file"
-	echo "Token and username saved to $config_file"
+	echo "Token saved for '$2' to $config_file"
 }
 
 function help {
@@ -191,8 +206,8 @@ function help {
 	echo "  repojump add <GitHub-username>"
 	echo "      → Fetch and store all repositories URLs for the given GitHub username."
 	echo ""
-	echo "  repojump set-token <username> <token>"
-	echo "      → Store a GitHub personal access token (PAT) for a user to access private repos."
+	echo "  repojump set-token <username>"
+	echo "      → Store a GitHub personal access token (PAT) for a user to access private repos (prompts for the token)."
 	echo ""
 	echo "  repojump <reponame>"
 	echo "      → Jump into the local folder of the given repo, cloning it if missing."

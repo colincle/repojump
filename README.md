@@ -35,10 +35,11 @@ Track every repository of a user:
 repojump add <github-username>
 ```
 
-Store a token so private repositories are included:
+Store a token so private repositories are included. The token is entered at a
+hidden prompt, so it never appears in your shell history or process list:
 
 ```sh
-repojump set-token <username> <personal-access-token>
+repojump set-token <username>
 ```
 
 Jump into a repository, cloning it if it is not present locally:
@@ -67,9 +68,11 @@ Public repositories work without authentication. Private repositories require a
 GitHub personal access token with the `repo` scope, created at
 `https://github.com/settings/tokens`.
 
-Tokens are stored locally in `~/repojump/.configs/<username>.config` with
-permissions set to `600` (readable only by you). They are never transmitted
-anywhere except to GitHub over HTTPS via `curl`.
+The token is entered at a hidden prompt, never passed as a command-line argument,
+so it stays out of your shell history and the process list. It is stored locally
+in `~/repojump/.configs/<username>.config`, created with `600` permissions
+(readable only by you), and is never transmitted anywhere except to GitHub over
+HTTPS via `curl`.
 
 ## Uninstall
 
