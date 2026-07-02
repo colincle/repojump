@@ -26,7 +26,7 @@ function jump-to-repo {
 
 	if [[ -z "$username" ]]; then
 		echo "❌ Error: Repo '$repo_name' not found in any list."
-		echo "   Use "repojump update" to update lists or "repojump add" to add a new one."
+		echo "   Use 'repojump update' to update lists or 'repojump add' to add a new one."
 		return 1
 	fi
 
@@ -156,7 +156,7 @@ function add {
 		echo "✅ Repo list for '$username' created (including private repos if any)."
 	else
 		echo "✅ Repo list for '$username' created (public repos only)."
-		echo "   "Use repojump set-token" to access private repos."
+		echo "   Use 'repojump set-token' to access private repos."
 	fi
 }
 
@@ -224,12 +224,7 @@ function update {
 				continue
 			fi
 			echo "🔄 Updating $username..."
-
-			if [[ "$username" == "$authenticated_username" ]]; then
-				add "add" "$username"
-			else
-				add "add" "$username"
-			fi
+			add "add" "$username"
 		fi
 	done
 
