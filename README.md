@@ -14,6 +14,12 @@ projects.
 - Update all tracked repository lists in one command.
 - Works in both Bash and Zsh, with case-insensitive tab completion.
 
+## Requirements
+
+Runs on **macOS** and **Linux**. It needs Bash or Zsh, plus `git` and `curl`,
+which are standard on both. On **Windows** it should work under WSL or Git Bash
+since those provide the same tools, but that is untested.
+
 ## Installation
 
 ```sh
