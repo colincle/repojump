@@ -23,8 +23,8 @@ since those provide the same tools, but that is untested.
 ## Installation
 
 ```sh
-git clone https://github.com/colincle/repojump_install.git
-cd repojump_install
+git clone https://github.com/colincle/repojump.git
+cd repojump
 bash install.sh
 source ~/.bashrc   # or: source ~/.zshrc
 ```
