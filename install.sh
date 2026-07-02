@@ -20,15 +20,27 @@ completion_line='source ~/.local/bin/repojump_completion'
 
 update_rc() {
 	local rcfile="$1"
-	if [[ -f "$rcfile" ]] && ! grep -Fxq "$comment_line" "$rcfile"; then
-		{
-			echo ""
-			echo "$comment_line"
-			echo "$path_line"
-			echo "$alias_line"
-			echo "$completion_line"
-		} >> "$rcfile"
+	[[ -f "$rcfile" ]] || return 0
+
+	local added=false line
+	# Append the marker once, then each line only if it is not already
+	# present. Re-running never duplicates lines, and it repairs a block
+	# that was partially removed by hand.
+	if ! grep -Fxq "$comment_line" "$rcfile"; then
+		printf '\n%s\n' "$comment_line" >> "$rcfile"
+		added=true
+	fi
+	for line in "$path_line" "$alias_line" "$completion_line"; do
+		if ! grep -Fxq "$line" "$rcfile"; then
+			echo "$line" >> "$rcfile"
+			added=true
+		fi
+	done
+
+	if $added; then
 		echo "Updated $rcfile with PATH, alias, and completion."
+	else
+		echo "$rcfile already configured, nothing to add."
 	fi
 }
 

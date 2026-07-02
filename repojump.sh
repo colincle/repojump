@@ -92,21 +92,18 @@ function add {
 		return 1
 	fi
 
-	mkdir -p ~/repojump
-	cd ~/repojump
-
 	if [[ "$2" == https://github.com/* ]]; then
 		username=$(basename "$2")
 	else
 		username="$2"
 	fi
 
-	mkdir -p "$username"
-	cd "$username"
-
-	listfile=".$username.list"
-	echo -n "" > "$listfile"
-
+	# Absolute paths so running add never changes the caller's directory.
+	mkdir -p "$HOME/repojump/$username"
+	listfile="$HOME/repojump/$username/.$username.list"
+	# Fetch into a temp file and only replace the real list on success, so a
+	# failed or empty fetch never wipes an existing list.
+	tmpfile=$(mktemp)
 
 	config_file="$HOME/repojump/.configs/$username.config"
 
@@ -141,7 +138,7 @@ function add {
 			break
 		fi
 
-		echo "$body" | grep '"clone_url"' | cut -d '"' -f 4 >> "$listfile"
+		echo "$body" | grep '"clone_url"' | cut -d '"' -f 4 >> "$tmpfile"
 
 		next_link=$(echo "$headers" | grep -i '^Link:' | grep -o '<[^>]*>; rel="next"' | sed -E 's/<([^>]+)>.*/\1/')
 
@@ -152,10 +149,20 @@ function add {
 		fi
 	done
 
-	if [[ "$use_token" == true ]]; then
-		echo "✅ Repo list for '$username' created (including private repos if any)."
+	# Only replace the real list if we actually fetched repositories.
+	if [[ -s "$tmpfile" ]]; then
+		mv "$tmpfile" "$listfile"
 	else
-		echo "✅ Repo list for '$username' created (public repos only)."
+		rm -f "$tmpfile"
+		echo "⚠️  No repositories fetched for '$username' (network issue, unknown user, or no repos)."
+		echo "   Existing list left unchanged."
+		return 1
+	fi
+
+	if [[ "$use_token" == true ]]; then
+		echo "✅ Repo list for '$username' updated (including private repos if any)."
+	else
+		echo "✅ Repo list for '$username' updated (public repos only)."
 		echo "   Use 'repojump set-token' to access private repos."
 	fi
 }
