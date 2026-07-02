@@ -16,7 +16,8 @@ if [[ -n $ZSH_VERSION ]]; then
 			fi
 		done
 
-		compadd -- $options
+		# case-insensitive matching
+		compadd -M 'm:{[:lower:][:upper:]}={[:upper:][:lower:]}' -- $options
 	}
 	compdef _repojump_completion repojump
 
@@ -36,7 +37,16 @@ elif [[ -n $BASH_VERSION ]]; then
 			fi
 		done
 
-		COMPREPLY=( $(compgen -W "$options" -- "$cur") )
+		# case-insensitive prefix matching, returns the real-cased names
+		local cur_lc opt opt_lc
+		cur_lc=$(printf '%s' "$cur" | tr '[:upper:]' '[:lower:]')
+		COMPREPLY=()
+		for opt in $options; do
+			opt_lc=$(printf '%s' "$opt" | tr '[:upper:]' '[:lower:]')
+			if [[ "$opt_lc" == "$cur_lc"* ]]; then
+				COMPREPLY+=("$opt")
+			fi
+		done
 	}
 	complete -F _repojump_completion repojump
 fi
