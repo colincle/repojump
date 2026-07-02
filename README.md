@@ -1,105 +1,94 @@
 # repojump
 
-**repojump** is a command-line tool to easily manage, fetch, and jump into GitHub repositories.  
-It lets you bulk-track public or private repos, auto-clone them on demand, and jump right into their folders, saving you time when managing multiple projects.
+A command-line tool to track, fetch, and jump into GitHub repositories. It bulk
+tracks a user's public or private repos, clones them on demand, and drops you
+straight into their directories, which saves time when working across many
+projects.
 
----
+## Features
 
-## ✨ Features
+- Bulk fetch every repository URL for a given GitHub username.
+- Track public repositories, and private ones with a personal access token.
+- Jump into any tracked repo by name, cloning it automatically if it is missing.
+- Disambiguate repos that share a name across different users.
+- Update all tracked repository lists in one command.
+- Works in both Bash and Zsh, with case-insensitive tab completion.
 
-- Bulk fetch all repos URLS from any GitHub username.
-- Track both public and private repositories (with token).
-- Jump into any local repo and auto-clone it if missing.
-- Update all tracked repo lists in one command.
-- Works with both Bash and zsh.
+## Installation
 
----
-
-## 🚀 Installation
-
-```
-git clone https://github.com/yourusername/repojump.git
-cd repojump
+```sh
+git clone https://github.com/colincle/repojump_install.git
+cd repojump_install
 bash install.sh
-source ~/.bashrc   # or source ~/.zshrc
+source ~/.bashrc   # or: source ~/.zshrc
 ```
 
-This installs:
-- `repojump` into `~/.local/bin/`
-- shell aliases and autocompletion into your `.bashrc` or `.zshrc`
+This installs the `repojump` command into `~/.local/bin/` and adds the PATH
+entry, alias, and completion to your shell config. After installing, run
+`repojump help` to confirm it works.
 
-✅ After installation, run:
-```
-repojump help
-```
+## Usage
 
----
+Track every repository of a user:
 
-## 📖 Usage
-
-### Add all repos from a user
-```
-repojump add <GitHub-username>
+```sh
+repojump add <github-username>
 ```
 
-### Add token for private repo access
-```
-repojump set-token <username> <your_personal_access_token>
+Store a token so private repositories are included:
+
+```sh
+repojump set-token <username> <personal-access-token>
 ```
 
-### Jump into a repo (clones if missing)
-```
+Jump into a repository, cloning it if it is not present locally:
+
+```sh
 repojump <reponame>
 ```
 
-### Jump into a repo when multiple users have the same name
-```
+When several tracked users have a repository with the same name, pick one:
+
+```sh
 repojump <reponame> <username>
 ```
 
-### Update all tracked users' repo lists
-```
+Refresh every tracked user's repository list:
+
+```sh
 repojump update
 ```
 
----
+Local clones live under `~/repojump/<username>/<reponame>`.
 
-## 🔒 Security Notice
+## Tokens and security
 
-- **Public repos** can be accessed without authentication.
-- **Private repos** require a **GitHub personal access token (PAT)**.
-- Tokens are stored locally in:
-  ```
-  ~/repojump/configs/<username>.config
-  ```
-  and are saved with `chmod 600` (user-only readable).
+Public repositories work without authentication. Private repositories require a
+GitHub personal access token with the `repo` scope, created at
+`https://github.com/settings/tokens`.
 
-**Reminder:**  
-This tool is fully open source. You can inspect the code to see exactly how tokens are handled.  
-No tokens are transmitted or shared anywhere except directly to GitHub via secure `curl` requests.
+Tokens are stored locally in `~/repojump/.configs/<username>.config` with
+permissions set to `600` (readable only by you). They are never transmitted
+anywhere except to GitHub over HTTPS via `curl`.
 
----
+## Uninstall
 
-## ❌ Uninstall
+1. Delete the installed files:
 
-To fully remove **repojump** and its data:
-1. Delete these files:
+   ```sh
+   rm ~/.local/bin/repojump ~/.local/bin/repojump_completion
    ```
-   ~/.local/bin/repojump
-   ~/.local/bin/repojump_completion
-   ```
-2. Remove or comment the added lines in:
-   ```
-   ~/.bashrc or ~/.zshrc
-   ```
-3. ⚠️ (Warning) To delete all stored repos and local changes:
-   ```
+
+2. Remove the `repojump setup` block from `~/.bashrc` or `~/.zshrc`.
+
+3. To also delete every stored list and local clone:
+
+   ```sh
    rm -rf ~/repojump
    ```
-   **This will permanently erase any unpushed or local work.**
 
----
+   This permanently erases any local or unpushed work under that directory.
 
-## 🛠️ License & Contributions
+## License
 
-This project is open source. Feel free to fork, improve, or adapt it.
+MIT, see [LICENSE](LICENSE).
