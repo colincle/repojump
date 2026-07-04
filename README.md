@@ -5,6 +5,8 @@ tracks a user's public or private repos, clones them on demand, and drops you
 straight into their directories, which saves time when working across many
 projects.
 
+![repojump demo](gif/gif.gif)
+
 ## Features
 
 - Bulk fetch every repository URL for a given GitHub username.
